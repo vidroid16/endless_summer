@@ -26,6 +26,9 @@ import com.yandex.ydb.table.query.Params;
 import com.yandex.ydb.table.rpc.grpc.GrpcTableRpc;
 import com.yandex.ydb.table.transaction.TxControl;
 import com.yandex.ydb.table.values.PrimitiveType;
+import org.jgrapht.DirectedGraph;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -115,5 +118,32 @@ public class TestController {
             }
         }));
         return new ResponseEntity(tasks, HttpStatus.OK);
+    }
+    @PostMapping("/graph")
+    public ResponseEntity testGraph() {
+
+        DirectedGraph<String, DefaultEdge> directedGraph
+                = new DefaultDirectedGraph<>(DefaultEdge.class);
+
+        directedGraph.addVertex("v1");
+        directedGraph.addVertex("v2");
+        directedGraph.addVertex("v3");
+        directedGraph.addVertex("v4");
+        directedGraph.addVertex("v5");
+        directedGraph.addVertex("v6");
+        directedGraph.addVertex("v7");
+        directedGraph.addVertex("v8");
+
+        directedGraph.addEdge("v1", "v2");
+        directedGraph.addEdge("v1", "v3");
+        directedGraph.addEdge("v1", "v4");
+        directedGraph.addEdge("v1", "v4");
+        directedGraph.addEdge("v2", "v5");
+        directedGraph.addEdge("v3", "v6");
+        directedGraph.addEdge("v5", "v7");
+
+        directedGraph.removeVertex("v3");
+
+        return new ResponseEntity(directedGraph.toString(), HttpStatus.OK);
     }
 }
