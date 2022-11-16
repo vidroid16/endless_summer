@@ -1,46 +1,34 @@
 package com.example.summer.api;
 
 import com.amazonaws.auth.*;
-import com.amazonaws.services.codepipeline.model.AWSSessionCredentials;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.TableCollection;
 import com.amazonaws.services.dynamodbv2.model.ListTablesResult;
-import com.amazonaws.services.dynamodbv2.xspec.S;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
 import com.example.summer.database.EntityManager;
+import com.example.summer.dto.SlideToAddDto;
+import com.example.summer.dto.TransitionDto;
+import com.example.summer.model.Novel;
 import com.example.summer.model.Slide;
-import com.example.summer.model.User;
+import com.example.summer.model.Transition;
+import com.example.summer.service.NovelService;
 import com.example.summer.service.SlideService;
 import com.example.summer.util.ThrowingConsumer;
-import com.google.common.collect.ImmutableList;
-import com.yandex.ydb.auth.iam.CloudAuthProvider;
-import com.yandex.ydb.core.grpc.GrpcTransport;
-import com.yandex.ydb.table.TableClient;
-import com.yandex.ydb.table.description.TableDescription;
 import com.yandex.ydb.table.query.Params;
-import com.yandex.ydb.table.rpc.grpc.GrpcTableRpc;
-import com.yandex.ydb.table.transaction.TxControl;
-import com.yandex.ydb.table.values.PrimitiveType;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import yandex.cloud.sdk.auth.jwt.ServiceAccountKey;
-import yandex.cloud.sdk.auth.provider.ApiKeyCredentialProvider;
+import org.springframework.web.bind.annotation.*;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.time.Duration;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -48,13 +36,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/tests")
 public class TestController {
-
-    private final SlideService slideService;
-
     @Autowired
-    public TestController(SlideService slideService) {
-        this.slideService = slideService;
-    }
+    NovelService novelService;
+    @Autowired
+    SlideService slideService;
 
     @PostMapping("/test1")
     public ResponseEntity<String> doTest() {
@@ -91,18 +76,6 @@ public class TestController {
             System.out.println(table.getTableName());
         }
         return new ResponseEntity(null, HttpStatus.OK);
-    }
-
-    @PostMapping("/slide")
-    public ResponseEntity testSlide() {
-        Slide slide = new Slide();
-        User user = new User();
-        user.setUsername("shalya");
-        user.setPassword("password");
-        slide.setUser(user);
-        slide.setLink("http://lalala.com");
-        slideService.saveSlide(slide);
-        return new ResponseEntity(slide, HttpStatus.OK);
     }
 
     @PostMapping("/ydb")
@@ -145,5 +118,40 @@ public class TestController {
         directedGraph.removeVertex("v3");
 
         return new ResponseEntity(directedGraph.toString(), HttpStatus.OK);
+    }
+    @PostMapping("/novel")
+    public ResponseEntity<String> rarara(){
+        Novel novel =new Novel("ydbbucket");
+        novelService.createNovel(novel);
+        return new ResponseEntity(HttpStatus.OK);
+    }
+    @PostMapping(path = "/image", consumes = {"multipart/form-data"})
+    public ResponseEntity ima(@ModelAttribute SlideToAddDto dto){
+        InputStream url = slideService.createSlide(dto);
+        return new ResponseEntity(url,HttpStatus.OK);
+    }
+    @PostMapping("/edge/{idParent}/{idChild}")
+    public ResponseEntity setEdge(@PathVariable("idParent") String idParent, @PathVariable("idChild") String idChild){
+        slideService.setParent(idChild,idParent);
+        return ResponseEntity.ok().build();
+    }
+    @GetMapping(path = "/slide")
+    public ResponseEntity getSlideWithChilds(){
+        return null;
+    }
+    @PostMapping("/transition")
+    public ResponseEntity setTransition(@RequestBody TransitionDto dto){
+        slideService.setTransition(dto);
+        return ResponseEntity.ok().build();
+    }
+    @GetMapping("/transition/{id}")
+    public ResponseEntity getTransitionsById(@PathVariable("id") String slideId){
+        List<Transition> transitions = slideService.getTransitionsOfSlide(slideId);
+        return new ResponseEntity(transitions,HttpStatus.OK);
+    }
+    @GetMapping("/slides/next/{idTransition}")
+    public ResponseEntity getNextSlide(@PathVariable("idTransition") String transitionId){
+        Slide slide = slideService.getNextSlide(transitionId);
+        return new ResponseEntity(slide,HttpStatus.OK);
     }
 }
