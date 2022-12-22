@@ -9,6 +9,8 @@ import com.example.summer.util.ThrowingConsumer;
 import com.yandex.ydb.table.query.Params;
 import com.yandex.ydb.table.values.PrimitiveValue;
 
+import javax.swing.plaf.PanelUI;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -81,6 +83,23 @@ public class SlideDao {
                 }));
         return transDescr;
     }
+    public List<Transition> getTransitionsByEdgeId(String edgeId){
+        final List<Transition> transDescr = new ArrayList<>();
+        entityManager.execute(
+                "declare $edgeId as Utf8;" +
+                        "select t.id as id,t.description as description,t.idEdge as idEdge, s.id as idSlide from Transitions t " +
+                        "inner join Edges e on e.id = t.idEdge " +
+                        "inner join Slides s on s.id = e.idParent " +
+                        "where e.id = $edgeId",
+                Params.of("$edgeId", PrimitiveValue.utf8(edgeId)),
+                ThrowingConsumer.unchecked(result -> {
+                    var resultSet = result.getResultSet(0);
+                    while (resultSet.next()){
+                        transDescr.add(Transition.fromResultSet(resultSet));
+                    }
+                }));
+        return transDescr;
+    }
     public String getNextSlideId(String transitionId){
         final String[] ids = {null};
         entityManager.execute(
@@ -122,5 +141,20 @@ public class SlideDao {
                     slides[0] = Slide.fromResultSet(resultSet);
                 }));
         return slides[0];
+    }
+    public List<Slide> getAllSlideByNovelId(String novelId){
+        final List<Slide> slides = new ArrayList<>();
+        entityManager.execute(
+                "declare $novelId as Utf8;" +
+                        "select s.id as id, s.photo as photo, s.description as description, s.novelId as novelId from Slides s " +
+                        "where s.novelId = $novelId",
+                Params.of("$novelId", PrimitiveValue.utf8(novelId)),
+                ThrowingConsumer.unchecked(result -> {
+                    var resultSet = result.getResultSet(0);
+                    while (resultSet.next()){
+                        slides.add(Slide.fromResultSet(resultSet));
+                    }
+                }));
+        return slides;
     }
 }

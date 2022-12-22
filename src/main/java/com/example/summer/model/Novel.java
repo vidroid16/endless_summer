@@ -10,8 +10,9 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Novel {
     private String id;
-    private String userId;
     private String name;
+    private String startSlideId;
+    private String userId;
 
     public Novel(String name) {
         this.name = name;
@@ -20,8 +21,9 @@ public class Novel {
     }
     public static Novel fromResultSet(ResultSetReader resultSet){
         var id = resultSet.getColumn("id").getUtf8();
-        var userId = resultSet.getColumn("userId").getUtf8();
         var name = resultSet.getColumn("name").getUtf8();
-        return new Novel(id,userId,name);
+        var startSlideId = resultSet.getColumn("startSlideId").getUtf8();
+        var userId = resultSet.getColumn("userId").getUtf8();
+        return new Novel(id,name,startSlideId,userId);
     }
 }
